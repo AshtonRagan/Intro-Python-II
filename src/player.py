@@ -8,11 +8,16 @@ class Player:
     def __init__(self, name, place):
         self.name = name
         self.place = place
-        self.health = 100
+        self.health = 10
         self.inventory = []
+        self.charClass = {}
+        self.dead = False
 
     def setHealth(self, num):
-        self.health = num
+        if self.health > 0:
+            self.health = num
+        else:
+            self.dead = True
 
     def handleInv(self, action, item):
         if action == "add":

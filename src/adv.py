@@ -1,15 +1,17 @@
 from room import Room
+from item import useableItems
 from player import Player
 from clear import clear_terminal
 from textHndlr import *
+import textwrap
 
 # Declare all the rooms
 
 
 room = {
-    'outside':  Room("Outside Cave Entrance", "North of you, the cave mount beckons"),
+    'outside':  Room("Outside Cave Entrance", "North of you, the cave mount beckons", useableItems["birdSkull"]),
 
-    'foyer': Room("Foyer", """Dim light filters in from the south Dusty passages run north and east."""),
+    'foyer': Room("Foyer", """Dim light filters in from the south, Dusty passages run north and east."""),
 
     'overlook': Room("Grand Overlook", """A steep cliff appears before you, falling into the darkness. Ahead to the north, a light flickers in the distance, but there is no way across the chasm."""),
 
@@ -19,6 +21,8 @@ room = {
 
 }
 
+# prints an items, itype in a room.
+# print(room["outside"].item.itype)
 
 room["narrow"].setDir(n="treasure", w="foyer")
 room["outside"].setDir(n="foyer")
@@ -41,9 +45,7 @@ room["treasure"].setDir(s="narrow")
 #
 # Main
 #
-
 # Make a new player object that is currently in the 'outside' room.
-
 # Write a loop that:
 #
 # * Prints the current room name
@@ -56,38 +58,56 @@ room["treasure"].setDir(s="narrow")
 # If the user enters "q", quit the game.
 
 
-def textTest(p, r):
+def textHand(p, r):
     clear_terminal()
     global msg
     global error
     global empty
+    global look
+    endln = "\n what direction would you like to head in? (n,e,s,w)\n"
+
     if p.place == "intro":
         msg = "Welcome enter your name!: "
         return msg
 
     if p.place == "start":
         p.place = "outside"
-        msg = f"{p.name} you start your adventure: {r[p.place].name}, {r[p.place].desc}\n what direction would you like to head in? (n,e,s,w)\n"
-        return msg
+        msg = f"{p.name} you start your adventure: {r[p.place].name}, {r[p.place].desc}"
+        return textwrap.fill(msg) + endln
 
     if error == True:
         error = False
-        msg += "error pleasse try a valid option (n,e,s,w) or quit\n"
-        return msg
+        endln = "\nerror pleasse try a valid option (n,e,s,w) or quit\n"
+        return msg + endln
 
     if empty == True:
         empty = False
-        msg += "Sorry you can not go that way try a different direction (n,e,s,w)\n"
-        return msg
+        endln = "\nSorry you can not go that way try a different direction (n,e,s,w)\n"
+        return msg + endln
 
-    msg = f"{r[p.place].name}, {r[p.place].desc}\n what direction would you like to head in? (n,e,s,w)\n"
-    return msg
+    msg = f"You are at: {r[p.place].name}, {r[p.place].desc}"
+    if look == True:
+        look = False
+        if r[p.place].item != "non":
+            p.handleInv("add", r[p.place].item)
+            msg += f"\nYou have found: {r[p.place].item.name}, and added it to your inventory"
+        else:
+            msg += f"\nAs you look around the room you find no items\n"
+    return textwrap.fill(msg) + endln
 
 
-def putTest(i, p, r):
+def commandHand(i, p, r):
     validInput = ["n", "e", "s", "w"]
     global error
     global empty
+    global game
+    global look
+
+    if i in ["q", "quit"]:
+        game = False
+        clear_terminal()
+        print("Game Ended")
+
     if p.place == "intro":
         p.name = i
         p.place = "start"
@@ -95,7 +115,11 @@ def putTest(i, p, r):
 
     if i in validInput:
         local = r[p.place].dirs[i]
-        print(f"LOCAL: {local}")
+    elif i in ["look", "inv", "stats"]:
+        if i == "look":
+            look = True
+            return
+
     else:
         error = True
         return
@@ -106,20 +130,18 @@ def putTest(i, p, r):
         p.place = local
 
 
+game = True
 empty = False
 error = False
+look = False
+
 msg = ""
-p = Player("none", "intro")
+hero = Player("none", "intro")
 # loop
-while True:
+while game is True:
 
     # text handler
-
-    x = input(textTest(p, room))
-    if x == "q" or x == "quit":
-        clear_terminal()
-        print("Game Ended")
-        break
+    userInput = input(textHand(hero, room))
 
     # input handler
-    putTest(x, p, room)
+    commandHand(userInput, hero, room)
